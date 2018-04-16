@@ -98,11 +98,36 @@ function delete_everything() {
         gcloud compute routes delete --quiet ${route}
     done
 
+    echo "Checking whether there are health-checks to delete..."
+    for s in $(gcloud compute health-checks list | egrep -v "NAME|default" | awk '{printf $1 " "}')
+    do
+        echo "deleting ${s}..."
+        gcloud compute health-checks delete --quiet ${s}
+    done
+
+    for s in $(gcloud compute http-health-checks list | egrep -v "NAME|default" | awk '{printf $1 " "}')
+    do
+        echo "deleting ${s}..."
+        gcloud compute http-health-checks delete --quiet ${s}
+    done
+    
+	for s in $(gcloud compute https-health-checks list | egrep -v "NAME|default" | awk '{printf $1 " "}')
+    do
+        echo "deleting ${s}..."
+        gcloud compute https-health-checks delete --quiet ${s}
+    done
+
     echo "Checking whether there are external IP addresses to delete..."
-    for address in $(gcloud compute addresses list | grep -v "NAME" | awk '{printf $1 " "}')
+    for address in $(gcloud compute addresses list --filter="region:($GCP_REGION)" | grep -v "NAME" | awk '{printf $1 " "}')
     do
         echo "deleting ${address}..."
-        gcloud compute addresses delete --quiet ${address} --region\=${GCP_REGION}
+        gcloud compute addresses delete --quiet ${address} --region=${GCP_REGION}
+    done
+
+    for address in $(gcloud compute addresses list --global | grep -v "NAME" | awk '{printf $1 " "}')
+    do
+        echo "deleting ${address}..."
+        gcloud compute addresses delete --quiet ${address} --global
     done
 
     echo "Checking whether there are firewall rules to delete..."
@@ -116,7 +141,7 @@ function delete_everything() {
     for subnet in $(gcloud compute networks subnets list | egrep -v "NAME|default" | awk '{printf $1 " "}')
     do
         echo "deleting ${subnet}..."
-        gcloud compute networks subnets delete --quiet ${subnet} --region\=${GCP_REGION}
+        gcloud compute networks subnets delete --quiet ${subnet} --region=${GCP_REGION}
     done
 
     echo "Checking whether there are networks to delete..."
@@ -124,6 +149,13 @@ function delete_everything() {
     do
         echo "deleting ${network}..."
         gcloud compute networks delete --quiet ${network}
+    done
+
+    echo "Checking whether there are ssl-certificates to delete..."
+    for s in $(gcloud compute ssl-certificates list | egrep -v "NAME|default" | awk '{printf $1 " "}')
+    do
+        echo "deleting ${s}..."
+        gcloud compute ssl-certificates delete --quiet ${s}
     done
 }
 

@@ -28,6 +28,7 @@ function delete_everything() {
         done
     done
 
+    echo "Checking whether there are forwarding rules to delete..."
     for f in $(gcloud compute forwarding-rules list --global | grep -v NAME | awk '{printf $1 " "}')
     do
         echo "deleting ${f}..."
@@ -40,6 +41,7 @@ function delete_everything() {
         gcloud compute forwarding-rules delete --region=$GCP_REGION --quiet ${f}
     done
  
+    echo "Checking whether there are target proxies to delete..."
     for t in $(gcloud compute target-https-proxies list | grep -v NAME | awk '{printf $1 " "}')
     do
         echo "deleting ${t}..."
@@ -52,12 +54,20 @@ function delete_everything() {
         gcloud compute target-http-proxies delete --quiet ${t}
     done
 
+    for t in $(gcloud compute target-pools list | grep -v NAME | awk '{printf $1 " "}')
+    do
+        echo "deleting ${t}..."
+        gcloud compute target-pools delete --quiet ${t}
+    done
+
+    echo "Checking whether there are url maps to delete..."
     for u in $(gcloud compute url-maps list | grep -v NAME | awk '{printf $1 " "}')
     do
         echo "deleting ${u}..."
         gcloud compute url-maps delete --quiet ${u}
     done
 
+    echo "Checking whether there are backend services to delete..."
     for backend_service in $(gcloud compute backend-services list | grep -v NAME | awk '{printf $1 " "}')
     do
         echo "deleting ${backend_service}..."

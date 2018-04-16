@@ -34,6 +34,12 @@ function delete_everything() {
         gcloud compute forwarding-rules delete --global --quiet ${f}
     done
 
+    for f in $(gcloud compute forwarding-rules list --filter="region:($GCP_REGION)" | grep -v NAME | awk '{printf $1 " "}')
+    do
+        echo "deleting ${f}..."
+        gcloud compute forwarding-rules delete --region=$GCP_REGION --quiet ${f}
+    done
+ 
     for t in $(gcloud compute target-https-proxies list | grep -v NAME | awk '{printf $1 " "}')
     do
         echo "deleting ${t}..."

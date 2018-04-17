@@ -157,6 +157,14 @@ function delete_everything() {
         echo "deleting ${s}..."
         gcloud compute ssl-certificates delete --quiet ${s}
     done
+    
+	echo "Checking whether there are dns zones to delete..."
+    for d in $(gcloud dns managed-zones list | egrep -v "NAME|default" | awk '{printf $1 " "}')
+    do
+        echo "deleting ${d}..."
+        gcloud dns record-sets import -z ${d} --delete-all-existing /dev/null
+        gcloud dns managed-zones delete --quiet ${d}
+    done
 }
 
 echo "#####################################################################"

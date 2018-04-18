@@ -176,6 +176,13 @@ function delete_everything() {
         gcloud sql instances delete --quiet ${s}
     done
     
+    echo "Checking whether there are source repos to delete..."
+    for s in $(gcloud source repos list | egrep -v "NAME|default" | awk '{printf $1 " "}')
+    do
+        echo "deleting ${s}..."
+        gcloud source repos delete --quiet ${s}
+    done
+    
 }
 
 echo "#####################################################################"

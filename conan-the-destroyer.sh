@@ -183,6 +183,13 @@ function delete_everything() {
         gcloud source repos delete --quiet ${s}
     done
     
+    echo "Checking whether there are buckets to delete..."
+    for s in $(gsutil ls )
+    do
+        echo "deleting ${s}..."
+        gsutil rm -fr ${s}
+    done
+    
 }
 
 echo "#####################################################################"

@@ -168,6 +168,14 @@ function delete_everything() {
         gcloud dns record-sets import -z ${d} --delete-all-existing /dev/null
         gcloud dns managed-zones delete --quiet ${d}
     done
+
+    echo "Checking whether there are sql instances to delete..."
+    for s in $(gcloud sql instances list | egrep -v "NAME|default" | awk '{printf $1 " "}')
+    do
+        echo "deleting ${s}..."
+        gcloud sql instances delete --quiet ${s}
+    done
+    
 }
 
 echo "#####################################################################"

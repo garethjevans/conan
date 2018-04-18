@@ -14,8 +14,11 @@ function delete_everything() {
         for instance in $(gcloud compute instances list --filter="zone:($zone)" | grep -v NAME | awk '{printf $1 " "}')
         do
             echo "deleting ${instance}..."
-            gcloud compute instances delete --zone=$zone --quiet ${instance}
+            instances="${instances} ${instance}"
         done
+        if [[ $(gcloud compute instances list --filter="zone:($zone)" 2>&1 | grep -v "Listed 0 items") ]]; then
+            gcloud compute instances delete --zone=$zone --quiet ${instances}
+        fi
     done
 
     echo "Checking whether there are disks to delete..."

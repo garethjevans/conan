@@ -1,3 +1,4 @@
+#!/bin/bash
 ################################
 # Define properties
 ################################
@@ -7,6 +8,18 @@ GCP_REGION=$(gcloud config get-value compute/region 2>/dev/null)
 ################################
 
 function delete_everything() {
+
+    if [[ $(gcloud --project ${GCP_PROJECT} services list --enabled | grep -c "container.googleapis.com") -eq 1 ]]; then
+		echo "Checking whether there are clusters to delete..."
+    	for zone in $(gcloud compute zones list --filter=$GCP_REGION | grep -v NAME | awk '{printf $1 " "}')
+    	do
+        	for c in $(gcloud container clusters list --filter="zone:($zone)" | grep -v NAME | awk '{printf $1 " "}')
+        	do
+            	echo "deleting ${c}..."
+            	gcloud container clusters delete --zone=$zone --quiet ${c}
+        	done
+    	done
+	fi 
 
     echo "Checking whether there are instances to delete..."
     for zone in $(gcloud compute zones list --filter=$GCP_REGION | grep -v NAME | awk '{printf $1 " "}')
@@ -134,7 +147,7 @@ function delete_everything() {
     done
 
     echo "Checking whether there are firewall rules to delete..."
-    for firewall_rule in $(gcloud compute firewall-rules list 2>/dev/null | grep -v "NAME" | awk '{printf $1 " "}')
+    for firewall_rule in $(gcloud compute firewall-rules list 2>/dev/null | egrep -v "NAME|default" | awk '{printf $1 " "}')
     do
         echo "deleting ${firewall_rule}..."
         gcloud compute firewall-rules delete --quiet ${firewall_rule}
@@ -161,13 +174,15 @@ function delete_everything() {
         gcloud compute ssl-certificates delete --quiet ${s}
     done
     
-	echo "Checking whether there are dns zones to delete..."
-    for d in $(gcloud dns managed-zones list | egrep -v "NAME|default" | awk '{printf $1 " "}')
-    do
-        echo "deleting ${d}..."
-        gcloud dns record-sets import -z ${d} --delete-all-existing /dev/null
-        gcloud dns managed-zones delete --quiet ${d}
-    done
+    if [[ $(gcloud --project ${GCP_PROJECT} services list --enabled | grep -c "dns.googleapis.com") -eq 1 ]]; then
+	    echo "Checking whether there are dns zones to delete..."
+        for d in $(gcloud dns managed-zones list | egrep -v "NAME|default" | awk '{printf $1 " "}')
+        do
+            echo "deleting ${d}..."
+            gcloud dns record-sets import -z ${d} --delete-all-existing /dev/null
+            gcloud dns managed-zones delete --quiet ${d}
+        done
+	fi
 
     echo "Checking whether there are sql instances to delete..."
     for s in $(gcloud sql instances list | egrep -v "NAME|default" | awk '{printf $1 " "}')
@@ -176,12 +191,14 @@ function delete_everything() {
         gcloud sql instances delete --quiet ${s}
     done
     
-    echo "Checking whether there are source repos to delete..."
-    for s in $(gcloud source repos list | egrep -v "NAME|default" | awk '{printf $1 " "}')
-    do
-        echo "deleting ${s}..."
-        gcloud source repos delete --quiet ${s}
-    done
+    if [[ $(gcloud --project ${GCP_PROJECT} services list --enabled | grep -c "sourcerepo.googleapis.com") -eq 1 ]]; then
+        echo "Checking whether there are source repos to delete..."
+        for s in $(gcloud source repos list | egrep -v "NAME|default" | awk '{printf $1 " "}')
+        do
+            echo "deleting ${s}..."
+            gcloud source repos delete --quiet ${s}
+        done
+    fi
     
     echo "Checking whether there are buckets to delete..."
     for s in $(gsutil ls )
